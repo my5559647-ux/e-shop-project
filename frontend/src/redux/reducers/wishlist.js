@@ -25,6 +25,8 @@ export const wishlistReducer = createReducer(initialState, (builder) => {
     })
     // 2. Remove from Wishlist Case (Fixed id logic)
     .addCase("removeFromWishlist", (state, action) => {
-      state.wishlist = state.wishlist.filter((i) => i.id !== action.payload);
+      state.wishlist = state.wishlist.filter(
+        (i) => (i._id || i.id) !== action.payload
+      );
     });
 });
