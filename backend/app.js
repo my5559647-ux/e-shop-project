@@ -7,8 +7,10 @@ const cors = require("cors");
 const path = require("path");
 
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001","https://e-shop-project-two.vercel.app"],
-  credentials: true
+  origin: ["http://localhost:3000", "http://localhost:3001", "https://e-shop-project-two.vercel.app"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json({ limit: "50mb" }));
