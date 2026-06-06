@@ -64,14 +64,17 @@ import { loadStripe } from "@stripe/stripe-js";
 const App = () => {
   const [stripeApikey, setStripeApiKey] = useState("");
 
-  async function getStripeApikey() {
-    try {
-      const { data } = await axios.get(`${server}/payment/stripeapikey`);
-      setStripeApiKey(data.stripeApikey);
-    } catch (error) {
-      console.error("Failed to load Stripe API key:", error.message);
-    }
+ async function getStripeApikey() {
+  try {
+    // یہاں { withCredentials: true } کا اضافہ کریں
+    const { data } = await axios.get(`${server}/payment/stripeapikey`, {
+      withCredentials: true,
+    });
+    setStripeApiKey(data.stripeApikey);
+  } catch (error) {
+    console.error("Failed to load Stripe API key:", error.message);
   }
+}
   useEffect(() => {
     Store.dispatch(loadUser());
     Store.dispatch(loadSeller());
