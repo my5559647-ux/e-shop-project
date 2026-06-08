@@ -76,17 +76,13 @@ router.post("/create-user", catchAsyncErrors(async (req, res, next) => {
       console.error("User activation email failed:", mailError.message);
     }
 
-    if (emailSent) {
-      return res.status(201).json({
-        success: true,
-        message: `Please check your email: ${user.email} to activate your account!`,
-      });
-    }
-
     return res.status(201).json({
       success: true,
-      message: `Account registered! Open this link to activate your account.`,
+      message: emailSent
+        ? `Please check your email: ${user.email} to activate. You can also use the link below.`
+        : `Account registered! Click the activation link below to continue.`,
       activationUrl,
+      emailSent,
     });
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));

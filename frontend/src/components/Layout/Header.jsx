@@ -16,6 +16,7 @@ import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 import { RxCross1 } from "react-icons/rx";
 import { useSelector } from "react-redux";
+import { getAvatarSrc } from "../../utils/avatar";
 
 const Header = ({ activeHeading }) => {
   const { isAuthenticated, user } = useSelector((state) => state.user);
@@ -177,9 +178,9 @@ const Header = ({ activeHeading }) => {
                 {isAuthenticated ? (
                   <Link to="/profile">
                     <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3321c8&color=fff&size=35&bold=true`}
-                      className="w-[35px] h-[35px] rounded-full"
-                      alt=""
+                      src={getAvatarSrc(user, 35)}
+                      className="w-[35px] h-[35px] rounded-full object-cover"
+                      alt="profile"
                     />
                   </Link>
                 ) : (
@@ -305,9 +306,9 @@ const Header = ({ activeHeading }) => {
                   <div>
                     <Link to="/profile">
                       <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3321c8&color=fff&size=60&bold=true`}
-                        alt=""
-                        className="w-[60px] h-[60px] rounded-full border-[3px] border-[#0eae88]"
+                        src={getAvatarSrc(user, 60)}
+                        alt="profile"
+                        className="w-[60px] h-[60px] rounded-full border-[3px] border-[#0eae88] object-cover"
                       />
                     </Link>
                   </div>

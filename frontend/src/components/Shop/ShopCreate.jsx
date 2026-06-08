@@ -1,4 +1,4 @@
-import { React, useState } from "react";
+import { React, useRef, useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,6 +17,8 @@ const ShopCreate = () => {
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activationLink, setActivationLink] = useState("");
+  const fileInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,8 +60,9 @@ const ShopCreate = () => {
         },
         { timeout: 120000 }
       );
-      toast.success(data.message, { autoClose: data.activationUrl ? 15000 : 5000 });
+      toast.success(data.message, { autoClose: 10000 });
       if (data.activationUrl) {
+        setActivationLink(data.activationUrl);
         window.open(data.activationUrl, "_blank", "noopener,noreferrer");
       }
       setName("");
@@ -69,6 +72,7 @@ const ShopCreate = () => {
       setZipCode("");
       setAddress("");
       setPhoneNumber("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
@@ -254,8 +258,11 @@ const ShopCreate = () => {
             </div>
 
             <div>
+              <p className="block text-sm font-medium text-gray-700 mb-2">
+                Shop Logo
+              </p>
               <div className="mt-2 flex items-center">
-                <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
+                <span className="inline-block h-12 w-12 rounded-full overflow-hidden border border-gray-200">
                   {avatar ? (
                     <img
                       src={avatar}
@@ -263,22 +270,23 @@ const ShopCreate = () => {
                       className="h-full w-full object-cover rounded-full"
                     />
                   ) : (
-                    <RxAvatar className="h-8 w-8" />
+                    <RxAvatar className="h-12 w-12" />
                   )}
                 </span>
-                <label
-                  htmlFor="file-input"
-                  className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
                 >
-                  <span>Upload a file</span>
-                  <input
-                    type="file"
-                    name="avatar"
-                    id="file-input"
-                    onChange={handleFileInputChange}
-                    className="sr-only"
-                  />
-                </label>
+                  Upload a file
+                </button>
               </div>
             </div>
 
@@ -298,6 +306,22 @@ const ShopCreate = () => {
               </Link>
             </div>
           </form>
+
+          {activationLink && (
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm font-medium text-green-800 mb-2">
+                Activate your shop (email may take time or not arrive):
+              </p>
+              <a
+                href={activationLink}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-blue-600 underline break-all"
+              >
+                {activationLink}
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </div>

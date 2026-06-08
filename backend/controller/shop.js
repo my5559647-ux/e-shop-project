@@ -70,17 +70,13 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
       console.error("Shop activation email failed:", mailError.message);
     }
 
-    if (emailSent) {
-      return res.status(201).json({
-        success: true,
-        message: `please check your email:- ${seller.email} to activate your shop!`,
-      });
-    }
-
     return res.status(201).json({
       success: true,
-      message: `Shop registered! Open this link to activate your shop: ${activationUrl}`,
+      message: emailSent
+        ? `Please check your email: ${seller.email} to activate. You can also use the link below.`
+        : `Shop registered! Click the activation link below to continue.`,
       activationUrl,
+      emailSent,
     });
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));

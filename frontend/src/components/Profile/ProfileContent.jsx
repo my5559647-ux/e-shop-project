@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { getAllOrdersOfUser } from "../../redux/actions/order";
+import { getAvatarSrc } from "../../utils/avatar";
 
 const ProfileContent = ({ active }) => {
   const { user, error, successMessage } = useSelector((state) => state.user);
@@ -53,9 +54,8 @@ const ProfileContent = ({ active }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only JPG, PNG, WEBP images are allowed!");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file!");
       return;
     }
 
@@ -66,11 +66,12 @@ const ProfileContent = ({ active }) => {
 
     const reader = new FileReader();
     reader.onloadend = () => {
+      setAvatar(reader.result);
       axios
         .put(
           `${server}/user/update-avatar`,
           { avatar: reader.result },
-          { withCredentials: true }
+          { withCredentials: true, timeout: 120000 }
         )
         .then(() => {
           dispatch(loadUser());
@@ -93,21 +94,25 @@ const ProfileContent = ({ active }) => {
           <div className="flex justify-center w-full">
             <div className="relative">
               <img
-                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=3321c8&color=fff&size=150&bold=true`}
+                src={avatar || getAvatarSrc(user, 150)}
                 className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
-                alt=""
+                alt="profile"
               />
-              <div className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px]">
-                <input
-                  type="file"
-                  id="image"
-                  className="hidden"
-                  onChange={handleImage}
-                />
-                <label htmlFor="image" className="cursor-pointer">
-                  <AiOutlineCamera />
-                </label>
-              </div>
+              <button
+                type="button"
+                className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px] border-0"
+                onClick={() => document.getElementById("profile-avatar-input")?.click()}
+                aria-label="Upload profile picture"
+              >
+                <AiOutlineCamera />
+              </button>
+              <input
+                type="file"
+                id="profile-avatar-input"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImage}
+              />
             </div>
           </div>
           <br />
