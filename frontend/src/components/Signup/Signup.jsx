@@ -15,15 +15,20 @@ const Singup = () => {
   const [avatar, setAvatar] = useState(null);
 
   const handleFileInputChange = (e) => {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+
     const reader = new FileReader();
 
-    reader.onload = () => {
-      if (reader.readyState === 2) {
-        setAvatar(reader.result);
-      }
+    reader.onloadend = () => {
+      setAvatar(reader.result);
     };
 
-    reader.readAsDataURL(e.target.files[0]);
+    reader.onerror = () => {
+      toast.error("Failed to read the selected file.");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {

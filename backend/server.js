@@ -9,8 +9,8 @@ process.on("uncaughtException", (err) => {
 });
 
 // config
-
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "config", ".env") });
 
 // connect db
 connectDatabase();

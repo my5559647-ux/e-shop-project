@@ -10,54 +10,93 @@ import { RxAvatar } from "react-icons/rx";
 const ShopCreate = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState();
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
-  const [zipCode, setZipCode] = useState();
-  const [avatar, setAvatar] = useState();
+  const [zipCode, setZipCode] = useState("");
+  const [avatar, setAvatar] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!name.trim()) {
+      return toast.error("Please enter your shop name!");
+    }
+    if (!phoneNumber.trim()) {
+      return toast.error("Please enter your phone number!");
+    }
+    if (!email.trim()) {
+      return toast.error("Please enter your email address!");
+    }
+    if (!address.trim()) {
+      return toast.error("Please enter your address!");
+    }
+    if (!zipCode.trim()) {
+      return toast.error("Please enter your zip code!");
+    }
+    if (password.length < 6) {
+      return toast.error("Password must be at least 6 characters!");
+    }
     if (!avatar) {
       return toast.error("Please upload a shop logo!");
     }
 
-    axios
-      .post(`${server}/shop/create-shop`, {
-        name,
-        email,
+    setLoading(true);
+    try {
+      const { data } = await axios.post(`${server}/shop/create-shop`, {
+        name: name.trim(),
+        email: email.trim(),
         password,
         avatar,
         zipCode,
         address,
         phoneNumber,
-      })
-      .then((res) => {
-        toast.success(res.data.message);
-        setName("");
-        setEmail("");
-        setPassword("");
-        setAvatar();
-        setZipCode();
-        setAddress("");
-        setPhoneNumber();
-      })
-      .catch((error) => {
-        toast.error(error.response?.data?.message);
       });
+      toast.success(data.message, { autoClose: data.activationUrl ? 15000 : 5000 });
+      if (data.activationUrl) {
+        window.open(data.activationUrl, "_blank", "noopener,noreferrer");
+      }
+      setName("");
+      setEmail("");
+      setPassword("");
+      setAvatar("");
+      setZipCode("");
+      setAddress("");
+      setPhoneNumber("");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Registration failed. Please check your details and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileInputChange = (e) => {
+    const input = e?.target;
+    const fileList = input?.files;
+    const file = fileList?.[0];
+
+    if (!file) {
+      // No file selected (or input cleared) — keep current state unchanged.
+      return;
+    }
+
     const reader = new FileReader();
 
-    reader.onload = () => {
-      if (reader.readyState === 2) {
-        setAvatar(reader.result);
-      }
+    reader.onloadend = () => {
+      // reader.result will be a data URL string
+      setAvatar(reader.result);
     };
 
-    reader.readAsDataURL(e.target.files[0]);
+    reader.onerror = () => {
+      toast.error("Failed to read the selected file.");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -69,18 +108,20 @@ const ShopCreate = () => {
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[35rem]">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label
-                htmlFor="email"
+                htmlFor="shop-name"
                 className="block text-sm font-medium text-gray-700"
               >
                 Shop Name
               </label>
               <div className="mt-1">
                 <input
-                  type="name"
+                  type="text"
+                  id="shop-name"
                   name="name"
+                  autoComplete="organization"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -91,15 +132,17 @@ const ShopCreate = () => {
 
             <div>
               <label
-                htmlFor="email"
+                htmlFor="phone-number"
                 className="block text-sm font-medium text-gray-700"
               >
                 Phone Number
               </label>
               <div className="mt-1">
                 <input
-                  type="number"
+                  type="tel"
+                  id="phone-number"
                   name="phone-number"
+                  autoComplete="tel"
                   required
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -118,6 +161,7 @@ const ShopCreate = () => {
               <div className="mt-1">
                 <input
                   type="email"
+                  id="email"
                   name="email"
                   autoComplete="email"
                   required
@@ -130,15 +174,17 @@ const ShopCreate = () => {
 
             <div>
               <label
-                htmlFor="email"
+                htmlFor="address"
                 className="block text-sm font-medium text-gray-700"
               >
                 Address
               </label>
               <div className="mt-1">
                 <input
-                  type="address"
+                  type="text"
+                  id="address"
                   name="address"
+                  autoComplete="street-address"
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -149,15 +195,17 @@ const ShopCreate = () => {
 
             <div>
               <label
-                htmlFor="email"
+                htmlFor="zipcode"
                 className="block text-sm font-medium text-gray-700"
               >
                 Zip Code
               </label>
               <div className="mt-1">
                 <input
-                  type="number"
+                  type="text"
+                  id="zipcode"
                   name="zipcode"
+                  autoComplete="postal-code"
                   required
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value)}
@@ -176,34 +224,30 @@ const ShopCreate = () => {
               <div className="mt-1 relative">
                 <input
                   type={visible ? "text" : "password"}
+                  id="password"
                   name="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                {visible ? (
-                  <AiOutlineEye
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(false)}
-                  />
-                ) : (
-                  <AiOutlineEyeInvisible
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(true)}
-                  />
-                )}
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 cursor-pointer bg-transparent border-0 p-0"
+                  onClick={() => setVisible(!visible)}
+                  aria-label={visible ? "Hide password" : "Show password"}
+                >
+                  {visible ? (
+                    <AiOutlineEye size={25} />
+                  ) : (
+                    <AiOutlineEyeInvisible size={25} />
+                  )}
+                </button>
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="avatar"
-                className="block text-sm font-medium text-gray-700"
-              ></label>
               <div className="mt-2 flex items-center">
                 <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
                   {avatar ? (
@@ -235,9 +279,10 @@ const ShopCreate = () => {
             <div>
               <button
                 type="submit"
-                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
+                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Submit
+                {loading ? "Submitting..." : "Submit"}
               </button>
             </div>
             <div className={`${styles.noramlFlex} w-full`}>

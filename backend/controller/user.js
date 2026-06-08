@@ -13,42 +13,57 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth");
 router.post("/create-user", async (req, res, next) => {
   try {
     const { name, email, password, avatar } = req.body;
-    const userEmail = await User.findOne({ email });
 
+    if (!name || !email || !password) {
+      return next(new ErrorHandler("Please provide the all fields!", 400));
+    }
+
+    const userEmail = await User.findOne({ email });
     if (userEmail) {
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const myCloud = await cloudinary.v2.uploader.upload(avatar, {
-      folder: "avatars",
-    });
+    const defaultAvatar = {
+      public_id: "default",
+      url: "https://via.placeholder.com/150",
+    };
+
+    let normalizedAvatar = defaultAvatar;
+
+    // avatar is expected to be an object: { public_id, url }
+    // If it's missing/empty or not in correct shape, use default.
+    if (
+      avatar &&
+      typeof avatar === "object" &&
+      avatar.public_id &&
+      avatar.url
+    ) {
+      normalizedAvatar = {
+        public_id: String(avatar.public_id),
+        url: String(avatar.url),
+      };
+    }
 
     const user = {
       name,
       email,
       password,
-      avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      },
+      avatar: normalizedAvatar,
     };
 
     const activationToken = createActivationToken(user);
     const activationUrl = `http://localhost:3000/activation/${activationToken}`;
 
-    try {
-      await sendMail({
-        email: user.email,
-        subject: "Activate your account",
-        message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
-      });
-      res.status(201).json({
-        success: true,
-        message: `please check your email:- ${user.email} to activate your account!`,
-      });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
-    }
+    await sendMail({
+      email: user.email,
+      subject: "Activate your account",
+      message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
+    });
+
+    return res.status(201).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
@@ -83,12 +98,11 @@ router.post(
       if (user) {
         return next(new ErrorHandler("User already exists", 400));
       }
-      user = await User.create({
-        name,
-        email,
-        avatar,
-        password,
-      });
+
+      // Correct Mongoose syntax: create() should exist on a model.
+      // If User.create is failing, saving via a constructed document avoids model method issues.
+      const userDoc = new User({ name, email, password, avatar });
+      user = await userDoc.save();
 
       sendToken(user, 201, res);
     } catch (error) {

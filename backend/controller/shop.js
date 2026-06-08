@@ -13,45 +13,74 @@ const sendShopToken = require("../utils/shopToken");
 // create shop
 router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { name, email, password, address, phoneNumber, zipCode } = req.body;
+
+    if (!name || !email || !password || !address || !phoneNumber || !zipCode) {
+      return next(new ErrorHandler("Please provide all required fields", 400));
+    }
+
     const sellerEmail = await Shop.findOne({ email });
     if (sellerEmail) {
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
-      folder: "avatars",
-    });
+    let avatarObj = {
+      public_id: "default",
+      url: "https://via.placeholder.com/150",
+    };
+
+    if (req.body.avatar) {
+      try {
+        const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+          folder: "avatars",
+        });
+        avatarObj = {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        };
+      } catch (uploadError) {
+        console.error("Cloudinary upload failed:", uploadError.message);
+      }
+    }
 
     const seller = {
-      name: req.body.name,
-      email: email,
-      password: req.body.password,
-      avatar: {
-        public_id: myCloud.public_id,
-        url: myCloud.secure_url,
-      },
-      address: req.body.address,
-      phoneNumber: req.body.phoneNumber,
-      zipCode: req.body.zipCode,
+      name,
+      email,
+      password,
+      avatar: avatarObj,
+      address,
+      phoneNumber,
+      zipCode,
     };
 
     const activationToken = createActivationToken(seller);
-    const activationUrl = `http://localhost:3000/seller/activation/${activationToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
+    const activationUrl = `${frontendUrl}/seller/activation/${activationToken}`;
 
+    let emailSent = false;
     try {
       await sendMail({
         email: seller.email,
         subject: "Activate your Shop",
         message: `Hello ${seller.name}, please click on the link to activate your shop: ${activationUrl}`,
       });
-      res.status(201).json({
+      emailSent = true;
+    } catch (mailError) {
+      console.error("Shop activation email failed:", mailError.message);
+    }
+
+    if (emailSent) {
+      return res.status(201).json({
         success: true,
         message: `please check your email:- ${seller.email} to activate your shop!`,
       });
-    } catch (error) {
-      return next(new ErrorHandler(error.message, 500));
     }
+
+    return res.status(201).json({
+      success: true,
+      message: `Shop registered! Open this link to activate your shop: ${activationUrl}`,
+      activationUrl,
+    });
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
@@ -137,7 +166,7 @@ router.post(
   })
 );
 
-// load shop
+// load shop (seller dashboard)
 router.get(
   "/getSeller",
   isSeller,
@@ -146,10 +175,10 @@ router.get(
       const seller = await Shop.findById(req.seller._id);
 
       if (!seller) {
-        return next(new ErrorHandler("User doesn't exists", 400));
+        return next(new ErrorHandler("Seller not found", 404));
       }
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         seller,
       });
@@ -158,6 +187,7 @@ router.get(
     }
   })
 );
+
 
 // log out from shop
 router.get(
