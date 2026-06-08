@@ -12,7 +12,8 @@ const Singup = () => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleFileInputChange = (e) => {
     const file = e?.target?.files?.[0];
@@ -33,22 +34,52 @@ const Singup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!name.trim()) {
+      return toast.error("Please enter your full name!");
+    }
+    if (!email.trim()) {
+      return toast.error("Please enter your email address!");
+    }
+    if (password.length < 6) {
+      return toast.error("Password must be at least 6 characters!");
+    }
     if (!avatar) {
       return toast.error("Please upload a profile picture!");
     }
 
-    axios
-      .post(`${server}/user/create-user`, { name, email, password, avatar })
-      .then((res) => {
-        toast.success(res.data.message);
-        setName("");
-        setEmail("");
-        setPassword("");
-        setAvatar();
-      })
-      .catch((error) => {
-        toast.error(error.response?.data?.message);
-      });
+    setLoading(true);
+    try {
+      const { data } = await axios.post(
+        `${server}/user/create-user`,
+        {
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          avatar,
+        },
+        { timeout: 120000 }
+      );
+
+      toast.success(data.message, { autoClose: data.activationUrl ? 15000 : 5000 });
+      if (data.activationUrl) {
+        window.open(data.activationUrl, "_blank", "noopener,noreferrer");
+      }
+
+      setName("");
+      setEmail("");
+      setPassword("");
+      setAvatar("");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          (error.code === "ECONNABORTED"
+            ? "Server is waking up. Please wait 1 minute and try again."
+            : "Registration failed. Please try again.")
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,10 +91,10 @@ const Singup = () => {
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label
-                htmlFor="email"
+                htmlFor="full-name"
                 className="block text-sm font-medium text-gray-700"
               >
                 Full Name
@@ -71,7 +102,8 @@ const Singup = () => {
               <div className="mt-1">
                 <input
                   type="text"
-                  name="text"
+                  id="full-name"
+                  name="name"
                   autoComplete="name"
                   required
                   value={name}
@@ -91,6 +123,7 @@ const Singup = () => {
               <div className="mt-1">
                 <input
                   type="email"
+                  id="email"
                   name="email"
                   autoComplete="email"
                   required
@@ -111,34 +144,30 @@ const Singup = () => {
               <div className="mt-1 relative">
                 <input
                   type={visible ? "text" : "password"}
+                  id="password"
                   name="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                {visible ? (
-                  <AiOutlineEye
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(false)}
-                  />
-                ) : (
-                  <AiOutlineEyeInvisible
-                    className="absolute right-2 top-2 cursor-pointer"
-                    size={25}
-                    onClick={() => setVisible(true)}
-                  />
-                )}
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 cursor-pointer bg-transparent border-0 p-0"
+                  onClick={() => setVisible(!visible)}
+                  aria-label={visible ? "Hide password" : "Show password"}
+                >
+                  {visible ? (
+                    <AiOutlineEye size={25} />
+                  ) : (
+                    <AiOutlineEyeInvisible size={25} />
+                  )}
+                </button>
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="avatar"
-                className="block text-sm font-medium text-gray-700"
-              ></label>
               <div className="mt-2 flex items-center">
                 <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
                   {avatar ? (
@@ -160,7 +189,7 @@ const Singup = () => {
                     type="file"
                     name="avatar"
                     id="file-input"
-                    accept=".jpg,.jpeg,.png"
+                    accept="image/*"
                     onChange={handleFileInputChange}
                     className="sr-only"
                   />
@@ -171,9 +200,10 @@ const Singup = () => {
             <div>
               <button
                 type="submit"
-                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
+                className="group relative w-full h-[40px] flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Submit
+                {loading ? "Submitting..." : "Submit"}
               </button>
             </div>
             <div className={`${styles.noramlFlex} w-full`}>

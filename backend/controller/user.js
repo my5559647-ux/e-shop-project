@@ -10,12 +10,12 @@ const sendToken = require("../utils/jwtToken");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
 
 // create user
-router.post("/create-user", async (req, res, next) => {
+router.post("/create-user", catchAsyncErrors(async (req, res, next) => {
   try {
     const { name, email, password, avatar } = req.body;
 
     if (!name || !email || !password) {
-      return next(new ErrorHandler("Please provide the all fields!", 400));
+      return next(new ErrorHandler("Please provide all fields!", 400));
     }
 
     const userEmail = await User.findOne({ email });
@@ -23,22 +23,30 @@ router.post("/create-user", async (req, res, next) => {
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const defaultAvatar = {
+    let avatarObj = {
       public_id: "default",
       url: "https://via.placeholder.com/150",
     };
 
-    let normalizedAvatar = defaultAvatar;
-
-    // avatar is expected to be an object: { public_id, url }
-    // If it's missing/empty or not in correct shape, use default.
-    if (
+    if (avatar && typeof avatar === "string" && avatar.startsWith("data:")) {
+      try {
+        const myCloud = await cloudinary.v2.uploader.upload(avatar, {
+          folder: "avatars",
+        });
+        avatarObj = {
+          public_id: myCloud.public_id,
+          url: myCloud.secure_url,
+        };
+      } catch (uploadError) {
+        console.error("Cloudinary upload failed:", uploadError.message);
+      }
+    } else if (
       avatar &&
       typeof avatar === "object" &&
       avatar.public_id &&
       avatar.url
     ) {
-      normalizedAvatar = {
+      avatarObj = {
         public_id: String(avatar.public_id),
         url: String(avatar.url),
       };
@@ -48,26 +56,42 @@ router.post("/create-user", async (req, res, next) => {
       name,
       email,
       password,
-      avatar: normalizedAvatar,
+      avatar: avatarObj,
     };
 
     const activationToken = createActivationToken(user);
-    const activationUrl = `http://localhost:3000/activation/${activationToken}`;
+    const frontendUrl =
+      process.env.FRONTEND_URL || "https://e-shop-project-two.vercel.app";
+    const activationUrl = `${frontendUrl}/activation/${activationToken}`;
 
-    await sendMail({
-      email: user.email,
-      subject: "Activate your account",
-      message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
-    });
+    let emailSent = false;
+    try {
+      await sendMail({
+        email: user.email,
+        subject: "Activate your account",
+        message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
+      });
+      emailSent = true;
+    } catch (mailError) {
+      console.error("User activation email failed:", mailError.message);
+    }
+
+    if (emailSent) {
+      return res.status(201).json({
+        success: true,
+        message: `Please check your email: ${user.email} to activate your account!`,
+      });
+    }
 
     return res.status(201).json({
       success: true,
-      user,
+      message: `Account registered! Open this link to activate your account.`,
+      activationUrl,
     });
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
-});
+}));
 
 // create activation token
 const createActivationToken = (user) => {

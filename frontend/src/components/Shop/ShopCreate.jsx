@@ -45,15 +45,19 @@ const ShopCreate = () => {
 
     setLoading(true);
     try {
-      const { data } = await axios.post(`${server}/shop/create-shop`, {
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        avatar,
-        zipCode,
-        address,
-        phoneNumber,
-      });
+      const { data } = await axios.post(
+        `${server}/shop/create-shop`,
+        {
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          avatar,
+          zipCode,
+          address,
+          phoneNumber,
+        },
+        { timeout: 120000 }
+      );
       toast.success(data.message, { autoClose: data.activationUrl ? 15000 : 5000 });
       if (data.activationUrl) {
         window.open(data.activationUrl, "_blank", "noopener,noreferrer");
@@ -68,7 +72,9 @@ const ShopCreate = () => {
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          "Registration failed. Please check your details and try again."
+          (error.code === "ECONNABORTED"
+            ? "Server is waking up. Please wait 1 minute and try again."
+            : "Registration failed. Please check your details and try again.")
       );
     } finally {
       setLoading(false);

@@ -54,7 +54,8 @@ router.post("/create-shop", catchAsyncErrors(async (req, res, next) => {
     };
 
     const activationToken = createActivationToken(seller);
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3001";
+    const frontendUrl =
+      process.env.FRONTEND_URL || "https://e-shop-project-two.vercel.app";
     const activationUrl = `${frontendUrl}/seller/activation/${activationToken}`;
 
     let emailSent = false;
