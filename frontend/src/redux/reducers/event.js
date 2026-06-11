@@ -1,19 +1,17 @@
-// src/redux/reducers/eventReducer.js
 import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
-  isLoading: false,
+  isLoading: true,
   event: null,
   events: [],
   success: false,
   error: null,
   message: null,
-   allEvents: [],
+  allEvents: [],
 };
 
 export const eventReducer = createReducer(initialState, (builder) => {
   builder
-    // CREATE EVENT
     .addCase("eventCreateRequest", (state) => {
       state.isLoading = true;
     })
@@ -27,34 +25,29 @@ export const eventReducer = createReducer(initialState, (builder) => {
       state.error = action.payload;
       state.success = false;
     })
-
-    // GET ALL EVENTS OF A SHOP
-    .addCase("getAllEventsShopRequest", (state) => {
+    .addCase("getAlleventsShopRequest", (state) => {
       state.isLoading = true;
     })
-    .addCase("getAllEventsShopSuccess", (state, action) => {
+    .addCase("getAlleventsShopSuccess", (state, action) => {
       state.isLoading = false;
       state.events = action.payload;
     })
-    .addCase("getAllEventsShopFail", (state, action) => {
+    .addCase("getAlleventsShopFailed", (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     })
-
-    // DELETE EVENT
-    .addCase("deleteEventRequest", (state) => {
+    .addCase("deleteeventRequest", (state) => {
       state.isLoading = true;
     })
-    .addCase("deleteEventSuccess", (state, action) => {
+    .addCase("deleteeventSuccess", (state, action) => {
       state.isLoading = false;
       state.message = action.payload;
     })
-    .addCase("deleteEventFail", (state, action) => {
+    .addCase("deleteeventFailed", (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     })
-// Get all events from all shop
-.addCase("getAlleventsRequest", (state) => {
+    .addCase("getAlleventsRequest", (state) => {
       state.isLoading = true;
     })
     .addCase("getAlleventsSuccess", (state, action) => {
@@ -65,8 +58,8 @@ export const eventReducer = createReducer(initialState, (builder) => {
       state.isLoading = false;
       state.error = action.payload;
     })
-    // CLEAR ERRORS
     .addCase("clearErrors", (state) => {
       state.error = null;
     });
 });
+

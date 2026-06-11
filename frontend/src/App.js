@@ -22,6 +22,8 @@ import {
   TrackOrderPage,
   UserInbox,
 } from "./routes/Routes.js";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+
 import {
   ShopDashboardPage,
   ShopCreateProduct,
@@ -66,7 +68,7 @@ const App = () => {
 
  async function getStripeApikey() {
   try {
-    // یہاں { withCredentials: true } کا اضافہ کریں
+    
     const { data } = await axios.get(`${server}/payment/stripeapikey`, {
       withCredentials: true,
     });
@@ -87,6 +89,7 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignupPage />} />
         <Route

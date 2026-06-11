@@ -2,19 +2,7 @@ import axios from "axios";
 import { server } from "../../server";
 
 // create product
-export const createProduct =
-  (
-    name,
-    description,
-    category,
-    tags,
-    originalPrice,
-    discountPrice,
-    stock,
-    shopId,
-    images
-  ) =>
-  async (dispatch) => {
+export const createProduct = (newForm) => async (dispatch) => {
     try {
       dispatch({
         type: "productCreateRequest",
@@ -22,15 +10,7 @@ export const createProduct =
 
       const { data } = await axios.post(
         `${server}/product/create-product`,
-        name,
-        description,
-        category,
-        tags,
-        originalPrice,
-        discountPrice,
-        stock,
-        shopId,
-        images,
+        newForm
       );
       dispatch({
         type: "productCreateSuccess",
